@@ -1,32 +1,7 @@
-import {createStore} from 'redux';
+import {createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk'
 
-export const store = createStore( (state, action) => {
-    if (state === undefined){
-        return {history: null};
-    }
-    if(action.type === 'HISTORY') {
-        return {history: action.history}
-    }
-    return state
-});
-
-const actionHistory = history => ({type: 'HISTORY', history});
-
-export const actionSend = ({nick, message}) => {
-    getDate(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({func: "addMessage", nick: nick, message: message})})
-        .then( response => console.log(response))
-
-    return {type: 'SEND', nick, message}
-    // action doesnt work without return ??
-}
-
-const url = 'https://cors-anywhere.herokuapp.com/http://students.a-level.com.ua:10012/'
-// const url = 'http://students.a-level.com.ua:10012/'
+const url = 'http://students.a-level.com.ua:10012/'
 
 const getDate = async (url, options) => {
     return (
@@ -34,40 +9,56 @@ const getDate = async (url, options) => {
     ).json()
 };
 
-const optionsHistory = {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json"
-    },
-    body: JSON.stringify({func: 'getMessages', messageId: 0})
+export const store = createStore( (state, action) => {
+    if (state === undefined){
+        return {};
+    }
+    if(action.type === 'PROMISE') {
+        const { type, status, payload, name } = action
+        return { ...state, [name]: { type, status, payload }}
+    }
+    return state
+}, applyMiddleware(thunk));
+
+store.subscribe(()=> {console.log(store.getState())});
+
+const actionPromise = (promise,name) => {
+    const actionPending     = () => ({ type: 'PROMISE', name, status: 'PENDING', payload: null, error: null })
+    const actionResolved    = payload => ({ type: 'PROMISE', name, status: 'RESOLVED', payload, error: null })
+    const actionRejected    = error => ({ type: 'PROMISE', name, status: 'REJECTED', payload: null, error })
+    return async dispatch => {
+        dispatch(actionPending())
+        try{
+            dispatch(actionResolved(await promise))
+        }
+        catch(e){
+            dispatch(actionRejected(e))
+        }
+    }
 }
 
-const refreshData = () => {
-    getDate(url, optionsHistory)
-        .then( response => {
-            store.dispatch(actionHistory(response.data.slice(-10)))
-            setTimeout(refreshData, 2000)
-        })
+export const actionSend = ({nick, message}) => {
+    const sendPromise = getDate(url, {
+        method: "POST",
+        body: JSON.stringify({func: "addMessage", nick: nick, message: message})
+    })
+    return async dispatch => {
+        dispatch(actionPromise( await sendPromise, 'send'));
+        dispatch(actionHistory())
+    }
 }
-refreshData();
 
-//  function jsonPost(url, data) {
-//    return new Promise((resolve, reject) => {
-//      var x = new XMLHttpRequest();
-//      x.onerror = () => reject(new Error('jsonPost failed'))
-//      x.open("POST", url);
-//      x.send(JSON.stringify(data))
-//
-//      x.onreadystatechange = () => {
-//        if (x.readyState == XMLHttpRequest.DONE && x.status == 200){
-//          resolve(JSON.parse(x.responseText))
-//        }
-//        else if (x.status != 200){
-//          reject(new Error('status is not 200'))
-//        }
-//      }
-//    })
-// }
-// jsonPost(url, {func: "getMessages", messageId: 0}).then( resp => console.log(resp))
+const actionHistory = () => {
+    const promiseHistory = getDate(url, {
+        method: "POST",
+        body: JSON.stringify({func: 'getMessages', messageId: 0})
+    })
+    return async dispatch => {
+        dispatch(actionPromise( await promiseHistory, 'history'));
+    }
+}
 
-// XMLHttpRequest works fine without proxy, fetch doesnt ???
+store.dispatch(actionHistory());
+// setInterval(() =>{
+//     store.dispatch(actionHistory());
+// }, 2000)

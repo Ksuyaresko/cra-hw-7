@@ -29,6 +29,12 @@
 .history__message-nick {
   text-align: right;
   font-size: 14px;
+  margin: 5px 0 0;
+}
+
+.history__message-date {
+  font-size: 10px;
+  opacity: .7;
 }
 
 .message {
@@ -47,6 +53,10 @@
   cursor: pointer;
   padding: 5px 10px;
   margin: 10px 0;
+}
+.message__btn.disabled {
+  background: gray;
+  pointer-events: none;
 }
 
 .message input,
