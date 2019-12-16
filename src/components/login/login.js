@@ -19,9 +19,11 @@ function LoginView({loginProp, authorize, signin}) {
       loginProp ? authorize({login, password}) : signin({login, password})
   }
 
-  const handleConfPassChange = () => {
-
+  const handleConfPassChange = (e) => {
+      setConfPassword(e.target.value)
     }
+
+    const disableBtn = () => !(password.length >= 6 && password === confirmPassword && login.length >= 1)
 
   return (
       <div className="login">
@@ -53,9 +55,9 @@ function LoginView({loginProp, authorize, signin}) {
                   onChange={handleConfPassChange}/>
           </div>}
         <div className="login__input-box">
-          <div className="login__btn" onClick={handleSubmit}>
+          <button className="login__btn" onClick={handleSubmit} disabled={disableBtn()}>
               {loginProp ? 'Log In' : 'Sign In'}
-          </div>
+          </button>
         </div>
       </div>
   );

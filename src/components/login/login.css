@@ -37,6 +37,14 @@
     padding: 5px;
     transition: all .2s;
     text-align: center;
+    border: none;
+    width: 100%;
+}
+
+.login__btn:disabled {
+    pointer-events: none;
+    background-color: #7e7e7e;
+    box-shadow: none;
 }
 
 .login__btn:hover {
